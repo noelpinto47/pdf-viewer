@@ -10,7 +10,7 @@ import * as z from "zod/v4";
 
 const execFileAsync = promisify(execFile);
 
-const PREVIEW_DIR_NAME = ".zed-pdf-preview";
+const PREVIEW_DIR_NAME = ".zed/pdf-preview";
 
 async function pathExists(p) {
   try {
