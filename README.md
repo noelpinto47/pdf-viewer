@@ -2,7 +2,7 @@
 
 Open and read PDFs while you work in [Zed](https://zed.dev/)—without leaving the editor for every glance at a paper, tutorial, or export.
 
-Zed still shows **“Binary files are not supported”** when you click a `.pdf` tab. Extensions **cannot** register a real PDF tab yet—there is no preview/webview API ([discussion](https://github.com/zed-industries/zed/discussions/59598), [tracking issue](https://github.com/zed-industries/zed/issues/21208)). **PDF Viewer** is a viewer extension in intent: it renders pages to PNG and opens them in Zed’s built-in **image viewer** (split pane next to your code). Agent integration is optional, not the product name.
+Zed still shows **“Binary files are not supported”** when you click a `.pdf` tab. Extensions **cannot** register a real PDF tab yet—there is no preview/webview API ([discussion](https://github.com/zed-industries/zed/discussions/59598), [tracking issue](https://github.com/zed-industries/zed/issues/21208)). **PDF Viewer** works around this: it renders each page to a PNG and opens the first page in Zed’s built-in **image viewer** (split pane next to your code). Agent integration is optional, not the product name.
 
 ## Why it isn’t “open the PDF tab and scroll”
 
@@ -14,7 +14,7 @@ That behavior requires Zed core (or a custom preview API). Until that exists, ev
 
 1. Clone this repo (or use your existing copy under `~/Documents/ZedExtensions/pdf-extension`).
 2. In Zed: **Command Palette** → **`zed: install dev extension`** → select this folder.
-3. Run **`scripts/preview-pdf.sh`** on your PDF (see below), or optionally enable **PDF Viewer** under Agent → context servers for preview commands.
+3. Add the Zed task below (recommended), or run `scripts/preview-pdf.sh` directly.
 
 ### Install from the Zed extension registry
 
@@ -22,16 +22,52 @@ After publishing to the [Zed extension registry](https://github.com/zed-industri
 
 ## View a PDF in Zed (recommended workflow)
 
-### Option A — Shell script (primary)
+### Option A — Zed task (primary)
+
+Focus the PDF tab and run the task. The script finds the PDF you have open, renders it, and opens **page 1**.
+
+1. Make the scripts executable:
+
+   ```bash
+   chmod +x scripts/*.sh
+   ```
+
+2. Open your tasks file (**Command Palette** → **`zed: open tasks`** for global, or **`zed: open project tasks`** for `.zed/tasks.json`) and add:
+
+   ```json
+   {
+     "label": "PDF: preview",
+     "command": "/absolute/path/to/scripts/preview-pdf-zed-task.sh",
+     "reveal": "never",
+     "hide": "always",
+     "use_new_terminal": false,
+     "allow_concurrent_runs": false
+   }
+   ```
+
+3. Run it via **Command Palette** → **`task: spawn`** → **PDF: preview** (or bind it to a key).
+
+How the PDF is chosen (never from a previous run):
+
+1. Zed environment variables, if they point to a `.pdf`.
+2. The focused window title (macOS; requires Accessibility permission for Zed/your terminal).
+3. Otherwise: the project’s only PDF, or a native macOS picker dialog if there are several (`fzf` on other systems, if a terminal is available).
+
+Behavior:
+
+- **Cached:** if PNGs for the PDF already exist and the PDF hasn’t changed, they are reused instead of regenerated.
+- **Output:** one PNG per page under `<project>/.zed/pdf-preview/<pdf-name>/`. Only the first page opens automatically; open other pages from the file tree.
+- **Page limit:** 20 pages by default. Set `MAX_PAGES=0` for all pages, or any other number to change the limit.
+
+### Option B — Shell script
 
 ```bash
-chmod +x scripts/preview-pdf.sh
-./scripts/preview-pdf.sh /path/to/TurtleBotTutorial.pdf
+./scripts/preview-pdf.sh /path/to/TurtleBotTutorial.pdf [max_pages] [project_root]
 ```
 
-This creates PNGs beside the PDF and opens the first page in Zed. Split the editor (e.g. tutorial PDF preview on one side, notes on the other).
+Renders the PDF (or reuses the cache) and opens page 1 in Zed.
 
-### Option B — Agent tools (optional)
+### Option C — Agent tools (optional)
 
 | Tool | What it does |
 |------|----------------|
@@ -43,12 +79,7 @@ Example Agent prompt:
 
 > Render a preview of `/Users/me/project/TurtleBotTutorial.pdf` and open the first page in Zed.
 
-### Option C — Manual
-
-1. Run `pdf_render_preview` (Agent) or `preview-pdf.sh`.
-2. In the file tree, open `.zed-pdf-preview/.../page-001.png` (and further pages as needed).
-
-Add `.zed-pdf-preview/` to `.gitignore` if you do not want previews in version control.
+The scripts add `pdf-preview/` to `.zed/.gitignore` automatically. If you use the Agent tools, add `.zed-pdf-preview/` to your `.gitignore` yourself.
 
 ## Requirements
 
@@ -57,9 +88,12 @@ Add `.zed-pdf-preview/` to `.gitignore` if you do not want previews in version c
 | [Zed](https://zed.dev/) | Editor |
 | [Rust (rustup)](https://rustup.rs/) + `wasm32-wasip2` | Builds the extension WASM |
 | **Node.js 18+** | MCP server (Zed bundles Node for extensions) |
-| **`pdftoppm`** (Poppler) | Best multi-page previews on Linux/Windows |
-| **macOS** | Uses **`qlmanage`** (Quick Look) when Poppler is not installed—first page is reliable; install Poppler for all pages: `brew install poppler` |
-| **`zed` CLI** (optional) | `pdf_open_first_page_in_zed` and `preview-pdf.sh`; install via Zed → **Command Palette** → **`zed: install cli`** |
+| **`pdftoppm`** (Poppler) | Multi-page previews: `brew install poppler` |
+| **macOS** | Falls back to **`qlmanage`** (Quick Look) if Poppler is missing—first page only. Uses `osascript` for the PDF picker dialog |
+| **`zed` CLI** | Opens the preview image; install via Zed → **Command Palette** → **`zed: install cli`** |
+| `fd`, `fzf` (optional) | PDF discovery / picker fallback on non-macOS systems |
+
+ImageMagick is **not** required.
 
 ## Development
 
@@ -94,17 +128,14 @@ The dev extension normally runs the server via `npx` (`npm` package or `github:n
 ## Limitations (honest)
 
 - **Not a native PDF tab** — previews are PNGs until Zed adds a preview/webview API or built-in PDF viewer.
-- **macOS without Poppler** — Quick Look thumbnail is typically **one page**; install Poppler for full documents.
+- **Separate page images** — each page is its own PNG; there is no single scrolling image.
+- **Brief terminal flash** — Zed tasks always run in a terminal tab. `reveal: never` and `hide: always` minimize it, but it may still flash briefly.
+- **macOS without Poppler** — Quick Look gives **one page**; install Poppler for full documents.
+- **Window-title detection** — macOS only, and needs Accessibility permission. Without it, the script falls back to Zed variables and the picker.
 - **Scanned PDFs** — `pdf_extract_text` depends on embedded text; image-only pages need OCR elsewhere.
 - **MCP in extensions** — Zed is moving toward the [official MCP registry](https://github.com/zed-industries/zed/issues/59351); this repo will publish the server there as well.
 
 Community forks with **native** PDF tabs (unofficial, not this extension): [zed-with-pdf-viewer](https://github.com/TendonT52/zed-with-pdf-viewer), [kkpdf-zed](https://github.com/kk376/kkpdf-zed).
-
-## Publishing checklist
-
-- [ ] `npm publish` for package `pdf-viewer@0.1.0` (if publishing the server to npm for the extension host).
-- [ ] Open a PR to [zed-industries/extensions](https://github.com/zed-industries/extensions) adding this repo as a submodule (see their [publishing guide](https://zed.dev/docs/extensions/publishing/publishing-guide)).
-- [ ] Extension id **`pdf-viewer`**; if the registry only accepts MCP-only submissions for this feature set, Zed may require a preview API first—track [custom preview API](https://github.com/zed-industries/zed/discussions/59598).
 
 ## License
 
