@@ -1,0 +1,24 @@
+{
+  "name": "mcp-server-pdf-viewer",
+  "version": "0.1.0",
+  "description": "MCP server for PDF text extraction and page previews in Zed",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "mcp-server-pdf-viewer": "./mcp-server/index.js"
+  },
+  "files": [
+    "mcp-server"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node mcp-server/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "pdfjs-dist": "^4.10.38",
+    "zod": "^3.25.0"
+  }
+}
