@@ -89,7 +89,7 @@ Point Zed at the checkout:
 }
 ```
 
-The dev extension normally runs the server via `npx` (`npm` package or `github:noelpinto/mcp-server-pdf-viewer`).
+The dev extension normally runs the server via `npx` (`npm` package or `github:noelpinto47/mcp-server-pdf-viewer`).
 
 ## Limitations (honest)
 

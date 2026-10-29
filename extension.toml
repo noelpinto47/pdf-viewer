@@ -4,7 +4,7 @@ version = "0.1.0"
 schema_version = 1
 authors = ["Noel Pinto <noelpinto47@gmail.com>"]
 description = "Read PDFs in Zed: render pages as images (native viewer) and expose PDF text to the Agent via MCP."
-repository = "https://github.com/noelpinto/mcp-server-pdf-viewer"
+repository = "https://github.com/noelpinto47/mcp-server-pdf-viewer"
 
 [context_servers.pdf-viewer]
 name = "PDF Viewer"
