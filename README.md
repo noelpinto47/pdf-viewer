@@ -2,10 +2,11 @@
 
 Open and read PDFs while you work in [Zed](https://zed.dev/)—without leaving the editor for every glance at a paper, tutorial, or export.
 
-Zed still shows **“Binary files are not supported”** when you click a `.pdf` tab. There is no public extension API for a native PDF renderer yet ([custom preview discussion](https://github.com/zed-industries/zed/discussions/59598), [webview extensions](https://github.com/zed-industries/zed/issues/21208)). This extension closes the gap today by:
+Zed still shows **“Binary files are not supported”** when you click a `.pdf` tab. Extensions **cannot** register a real PDF tab yet—there is no preview/webview API ([discussion](https://github.com/zed-industries/zed/discussions/59598), [tracking issue](https://github.com/zed-industries/zed/issues/21208)). **PDF Viewer** is a viewer extension in intent: it renders pages to PNG and opens them in Zed’s built-in **image viewer** (split pane next to your code). Agent integration is optional, not the product name.
 
-1. **Rendering pages to PNG** next to your PDF (Zed already has a fast **image viewer**).
-2. **Exposing PDF text and tools** to the Agent through an MCP context server.
+## Why it isn’t “open the PDF tab and scroll”
+
+That behavior requires Zed core (or a custom preview API). Until that exists, every extension—including this one—works around the binary-file wall. Native PDF tabs today only exist in unofficial Zed forks (see [Limitations](#limitations-honest)).
 
 ## Quick start
 
@@ -13,16 +14,24 @@ Zed still shows **“Binary files are not supported”** when you click a `.pdf`
 
 1. Clone this repo (or use your existing copy under `~/Documents/ZedExtensions/pdf-extension`).
 2. In Zed: **Command Palette** → **`zed: install dev extension`** → select this folder.
-3. Enable the context server: **Agent** panel → **⋯** → ensure **PDF Viewer** is running (or add it under **Context servers**).
-4. With a PDF path in mind, ask the Agent to run **`pdf_render_preview`** or **`pdf_open_first_page_in_zed`**, or run the shell helper below.
+3. Run **`scripts/preview-pdf.sh`** on your PDF (see below), or optionally enable **PDF Viewer** under Agent → context servers for preview commands.
 
 ### Install from the Zed extension registry
 
-After this extension is published to the [Zed extension registry](https://github.com/zed-industries/extensions), install **PDF Viewer MCP** from **Extensions** like any other extension.
+After publishing to the [Zed extension registry](https://github.com/zed-industries/extensions), install **PDF Viewer** from **Extensions**.
 
 ## View a PDF in Zed (recommended workflow)
 
-### Option A — Agent / MCP tools
+### Option A — Shell script (primary)
+
+```bash
+chmod +x scripts/preview-pdf.sh
+./scripts/preview-pdf.sh /path/to/TurtleBotTutorial.pdf
+```
+
+This creates PNGs beside the PDF and opens the first page in Zed. Split the editor (e.g. tutorial PDF preview on one side, notes on the other).
+
+### Option B — Agent tools (optional)
 
 | Tool | What it does |
 |------|----------------|
@@ -33,15 +42,6 @@ After this extension is published to the [Zed extension registry](https://github
 Example Agent prompt:
 
 > Render a preview of `/Users/me/project/TurtleBotTutorial.pdf` and open the first page in Zed.
-
-### Option B — Shell script (no Agent)
-
-```bash
-chmod +x scripts/preview-pdf.sh
-./scripts/preview-pdf.sh /path/to/TurtleBotTutorial.pdf
-```
-
-This creates PNGs beside the PDF and opens the first page in Zed. Split the editor (e.g. tutorial PDF preview on one side, notes on the other).
 
 ### Option C — Manual
 
@@ -84,12 +84,12 @@ Point Zed at the checkout:
 "context_servers": {
   "pdf-viewer": {
     "command": "node",
-    "args": ["/absolute/path/to/mcp-server-pdf-viewer/mcp-server/index.js"]
+    "args": ["/absolute/path/to/pdf-viewer/mcp-server/index.js"]
   }
 }
 ```
 
-The dev extension normally runs the server via `npx` (`npm` package or `github:noelpinto47/mcp-server-pdf-viewer`).
+The dev extension normally runs the server via `npx` (`npm` package or `github:noelpinto47/pdf-viewer`).
 
 ## Limitations (honest)
 
@@ -102,9 +102,9 @@ Community forks with **native** PDF tabs (unofficial, not this extension): [zed-
 
 ## Publishing checklist
 
-- [ ] `npm publish` for package `mcp-server-pdf-viewer@0.1.0` (required for registry MCP extensions that download from npm).
+- [ ] `npm publish` for package `pdf-viewer@0.1.0` (if publishing the server to npm for the extension host).
 - [ ] Open a PR to [zed-industries/extensions](https://github.com/zed-industries/extensions) adding this repo as a submodule (see their [publishing guide](https://zed.dev/docs/extensions/publishing/publishing-guide)).
-- [ ] Extension id **`mcp-server-pdf-viewer`** (registry rules: MCP extensions must indicate MCP in the id).
+- [ ] Extension id **`pdf-viewer`**; if the registry only accepts MCP-only submissions for this feature set, Zed may require a preview API first—track [custom preview API](https://github.com/zed-industries/zed/discussions/59598).
 
 ## License
 

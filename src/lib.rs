@@ -1,8 +1,8 @@
 use zed_extension_api as zed;
 
-const MCP_PACKAGE: &str = "mcp-server-pdf-viewer";
+const MCP_PACKAGE: &str = "pdf-viewer";
 const MCP_VERSION: &str = "0.1.0";
-const GITHUB_NPX_SOURCE: &str = "github:noelpinto47/mcp-server-pdf-viewer";
+const GITHUB_NPX_SOURCE: &str = "github:noelpinto47/pdf-viewer";
 
 struct PdfViewerExtension;
 

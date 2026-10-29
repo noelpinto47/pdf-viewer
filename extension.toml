@@ -1,10 +1,10 @@
-id = "mcp-server-pdf-viewer"
-name = "PDF Viewer MCP"
+id = "pdf-viewer"
+name = "PDF Viewer"
 version = "0.1.0"
 schema_version = 1
 authors = ["Noel Pinto <noelpinto47@gmail.com>"]
-description = "Read PDFs in Zed: render pages as images (native viewer) and expose PDF text to the Agent via MCP."
-repository = "https://github.com/noelpinto47/mcp-server-pdf-viewer"
+description = "View PDFs in Zed by opening rendered page previews beside your project."
+repository = "https://github.com/noelpinto47/pdf-viewer"
 
 [context_servers.pdf-viewer]
 name = "PDF Viewer"
